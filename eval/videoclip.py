@@ -4,6 +4,25 @@ from tqdm import tqdm
 import cv2
 import pandas as pd
 
+import argparse
+import os
+
+# Create an ArgumentParser object
+parser = argparse.ArgumentParser()
+
+# Add arguments
+parser.add_argument('--data', type=str, default="./Vinoground", help='Path to Vinoground dataset (from Huggingface)')
+parser.add_argument('--ckpt', type=str, default="./checkpoints/", help='Path to model checkpoints')
+parser.add_argument("--nframes", type=int, default=32, help="Number of frames to sample.")
+
+# Parse arguments
+args = parser.parse_args()
+
+data_path = args.data
+ckpt_path = args.ckpt
+nframes = args.nframes
+vino = pd.read_csv(os.path.join(data_path, "vinoground.csv"))
+
 from mmpt.models import MMPTModel
 
 def encode_video(video_path, nframe=60):
@@ -28,17 +47,17 @@ text_correct = 0
 video_correct = 0
 group_correct = 0
 
-vino = pd.read_csv("vinoground.csv")
+vino = pd.read_csv(os.path.join(data_path, "vinoground.csv"))
 for i in tqdm(range(500)):
     try:
-        pos_vid = f"./vinoground_videos/{i}_pos.mp4"
-        neg_vid = f"./vinoground_videos/{i}_neg.mp4"
+        pos_vid = os.path.join(data_path, f"vinoground_videos/{i}_pos.mp4")
+        neg_vid = os.path.join(data_path, f"vinoground_videos/{i}_neg.mp4")
         pos_cap = vino["pos_cap"][i]
         neg_cap = vino["neg_cap"][i]
         # B, T, FPS, H, W, C (VideoCLIP is trained on 30 fps of s3d)
         # video_frames = torch.randn(1, 2, 30, 224, 224, 3)
-        pos_frames = encode_video(pos_vid, 32)
-        neg_frames = encode_video(neg_vid, 32)
+        pos_frames = encode_video(pos_vid, nframes)
+        neg_frames = encode_video(neg_vid, nframes)
 
         pos_caps, pos_cmasks = aligner._build_text_seq(
             tokenizer(pos_cap, add_special_tokens=False)["input_ids"]

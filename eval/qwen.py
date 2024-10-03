@@ -4,7 +4,35 @@ import torch
 import json
 from tqdm import tqdm
 
-model_name = "Qwen/Qwen2-VL-72B-Instruct"
+import sys
+if "nframes" in sys.argv and "fps" in sys.argv:
+    raise ValueError("You can only specify one: nframes or fps.")
+import argparse
+
+# Create an ArgumentParser object
+parser = argparse.ArgumentParser()
+
+# Add arguments
+parser.add_argument('--data', type=str, default="./Vinoground", help='Path to Vinoground dataset (from Huggingface)')
+parser.add_argument('--ckpt', type=str, default="./checkpoints/qwen", help='Path to model checkpoints')
+parser.add_argument("--output", type=str, default="./outputs/qwen", help="Output directory of score files")
+parser.add_argument("--nframes", type=int, default=32, help="Number of frames to sample.")
+parser.add_argument("--fps", type=int, default=2, help="Frames per second to sample frames.")
+
+# Parse arguments
+args = parser.parse_args()
+
+data_path = args.data
+ckpt_path = args.ckpt
+output_dir = args.output
+nframes = args.nframes
+fps = args.fps
+
+import os
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+model_name = ckpt_path
 
 # We recommend enabling flash_attention_2 for better acceleration and memory saving, especially in multi-image and video scenarios.
 model = Qwen2VLForConditionalGeneration.from_pretrained(
@@ -17,29 +45,45 @@ model = Qwen2VLForConditionalGeneration.from_pretrained(
 # default processer
 processor = AutoProcessor.from_pretrained(model_name)
 
+if "fps" in sys.argv:
+    video_ans_file = open(os.path.join(output_dir, f"videoscore-fps{fps}-response.jsonl"), 'w')
+    text_ans_file = open(os.path.join(output_dir, f"textscore-fps{fps}-response.jsonl"), 'w')
+else:
+    video_ans_file = open(os.path.join(output_dir, f"videoscore-frame{nframes}-response.jsonl"), 'w')
+    text_ans_file = open(os.path.join(output_dir, f"textscore-frame{nframes}-response.jsonl"), 'w')
 
-for nframes in [32,16,8,4,2]:
-# for fps in [4,2,1,0.5]:
-    video_ans_file = open(f"qwen2-vl-72b-videoscore-frame{nframes}-response.jsonl", 'w')
-    text_ans_file = open(f"qwen2-vl-72b-textscore-frame{nframes}-response.jsonl", 'w')
-    # video_ans_file = open(f"qwen2-vl-7b-CoT-videoscore-fps{fps}-response.jsonl", 'w')
-    # text_ans_file = open(f"qwen2-vl-7b-CoT-textscore-fps{fps}-response.jsonl", 'w')
+with open(os.path.join(data_path, "vinoground_textscore.json"), 'r') as f:
+    questions = json.load(f)
 
-    with open("vinoground_textscore.json", 'r') as f:
-        questions = json.load(f)
+for question in tqdm(questions):
+    try:
 
-    for question in tqdm(questions):
-        try:
-
+        if "fps" in sys.argv:
             messages = [
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "video",
-                            "video": question["video_name"],
+                            "video": os.path.join(data_path, question["video_name"]),
+                            "fps": fps
+                        },
+                        {
+                            "type": "text",
+                            "text": question["question"],
+                        },
+                    ],
+                }
+            ]
+        else:
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "video",
+                            "video": os.path.join(data_path, question["video_name"]),
                             "nframes": nframes
-                            # "fps": fps
                         },
                         {
                             "type": "text",
@@ -49,81 +93,69 @@ for nframes in [32,16,8,4,2]:
                 }
             ]
 
-            # Preparation for inference
-            text = processor.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
-            image_inputs, video_inputs = process_vision_info(messages)
-            inputs = processor(
-                text=[text],
-                images=image_inputs,
-                videos=video_inputs,
-                padding=True,
-                return_tensors="pt",
-            )
-            inputs = inputs.to("cuda")
+        # Preparation for inference
+        text = processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(messages)
+        inputs = processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to("cuda")
 
-            # Inference: Generation of the output
-            generated_ids = model.generate(**inputs, max_new_tokens=128)
-            generated_ids_trimmed = [
-                out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-            ]
-            output_text = processor.batch_decode(
-                generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-            )
-            text_ans_file.write(json.dumps(dict(idx=question["idx"], response=output_text)) + '\n')
-            text_ans_file.flush()
-        except Exception as e:
-            print(e)
-            continue
-
-
-    text_ans_file.close()
+        # Inference: Generation of the output
+        generated_ids = model.generate(**inputs, max_new_tokens=128)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = processor.batch_decode(
+            generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        text_ans_file.write(json.dumps(dict(idx=question["idx"], response=output_text)) + '\n')
+        text_ans_file.flush()
+    except Exception as e:
+        print(e)
+        continue
 
 
-    with open("vinoground_videoscore.json", 'r') as f:
-        questions = json.load(f)
+text_ans_file.close()
 
-    for question in tqdm(questions):
-        try:
-            # messages = [
-            #     {
-            #         "role": "user",
-            #         "content": [
-            #             {
-            #                 "type": "text",
-            #                 "text": "This is the first video:",
-            #             },
-            #             {
-            #                 "type": "video",
-            #                 "video": "vinoground_videos/" + question["vid1"],
-            #                 "nframes": nframes,
-            #             },
-            #             {
-            #                 "type": "text",
-            #                 "text": "This is the second video:",
-            #             },
-            #             {
-            #                 "type": "video",
-            #                 "video": "vinoground_videos/" + question["vid2"],
-            #                 "nframes": nframes,
-            #             },
-            #             {
-            #                 "type": "text",
-            #                 "text": question["question"] + "Please only output one English character.",
-            #             },
-            #         ],
-            #     }
-            # ]
+
+with open(os.path.join(data_path, "vinoground_videoscore.json"), 'r') as f:
+    questions = json.load(f)
+
+for question in tqdm(questions):
+    try:
+        if "fps" in sys.argv:
             messages = [
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "video",
-                            "video": question["video_name"],
-                            "nframes": nframes,
-                            # "fps": fps
+                            "video": os.path.join(data_path, question["video_name"]),
+                            "fps": fps
+                        },
+                        {
+                            "type": "text",
+                            "text": question["question"],
+                        },
+                    ],
+                }
+            ]
+        else:
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "video",
+                            "video": os.path.join(data_path, question["video_name"]),
+                            "nframes": nframes
                         },
                         {
                             "type": "text",
@@ -134,33 +166,33 @@ for nframes in [32,16,8,4,2]:
             ]
 
 
-            # Preparation for inference
-            text = processor.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
-            image_inputs, video_inputs = process_vision_info(messages)
-            inputs = processor(
-                text=[text],
-                images=image_inputs,
-                videos=video_inputs,
-                padding=True,
-                return_tensors="pt",
-            )
-            inputs = inputs.to("cuda")
+        # Preparation for inference
+        text = processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(messages)
+        inputs = processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to("cuda")
 
-            # Inference: Generation of the output
-            generated_ids = model.generate(**inputs, max_new_tokens=128)
-            generated_ids_trimmed = [
-                out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-            ]
-            output_text = processor.batch_decode(
-                generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-            )
-            video_ans_file.write(json.dumps(dict(idx=question["idx"], response=output_text)) + '\n')
-            video_ans_file.flush()
-        except Exception as e:
-            print(e)
-            continue
+        # Inference: Generation of the output
+        generated_ids = model.generate(**inputs, max_new_tokens=128)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = processor.batch_decode(
+            generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        video_ans_file.write(json.dumps(dict(idx=question["idx"], response=output_text)) + '\n')
+        video_ans_file.flush()
+    except Exception as e:
+        print(e)
+        continue
 
 
-    video_ans_file.close()
+video_ans_file.close()

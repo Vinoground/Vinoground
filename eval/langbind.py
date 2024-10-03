@@ -3,10 +3,25 @@ import pandas as pd
 from tqdm import tqdm
 from languagebind import LanguageBindVideo, LanguageBindVideoTokenizer, LanguageBindVideoProcessor
 
+import argparse
+import os
 
-vino = pd.read_csv("vinoground.csv")
+# Create an ArgumentParser object
+parser = argparse.ArgumentParser()
 
-pretrained_ckpt = 'LanguageBind_Video_Huge_V1.5_FT'  # also 'LanguageBind/LanguageBind_Video'
+# Add arguments
+parser.add_argument('--data', type=str, default="./Vinoground", help='Path to Vinoground dataset (from Huggingface)')
+parser.add_argument('--ckpt', type=str, default="./checkpoints/langbind", help='Path to model checkpoints')
+
+# Parse arguments
+args = parser.parse_args()
+
+data_path = args.data
+ckpt_path = args.ckpt
+
+vino = pd.read_csv(os.path.join(data_path, "vinoground.csv"))
+
+pretrained_ckpt = ckpt_path  # also 'LanguageBind/LanguageBind_Video'
 model = LanguageBindVideo.from_pretrained(pretrained_ckpt, cache_dir='./cache_dir')
 tokenizer = LanguageBindVideoTokenizer.from_pretrained("LanguageBind/LanguageBind_Video_FT", cache_dir='./cache_dir')
 video_process = LanguageBindVideoProcessor(model.config, tokenizer)
@@ -20,8 +35,8 @@ group_correct = 0
 videos = []
 texts = []
 for i in range(500):
-    videos.append(f"./vinoground_videos/{i}_pos.mp4")
-    videos.append(f"./vinoground_videos/{i}_neg.mp4")
+    videos.append(os.path.join(data_path, f"vinoground_videos/{i}_pos.mp4"))
+    videos.append(os.path.join(data_path, f"vinoground_videos/{i}_neg.mp4"))
     texts.append(vino["pos_cap"][i])
     texts.append(vino["neg_cap"][i])
 data = video_process(videos, texts, return_tensors='pt')

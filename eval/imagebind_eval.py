@@ -3,8 +3,22 @@ import torch
 from imagebind.models import imagebind_model
 from imagebind.models.imagebind_model import ModalityType
 import pandas as pd
+import os
 
-vino = pd.read_csv("vinoground.csv")
+import argparse
+
+# Create an ArgumentParser object
+parser = argparse.ArgumentParser()
+
+# Add arguments
+parser.add_argument('--data', type=str, default="./Vinoground", help='Path to Vinoground dataset (from Huggingface)')
+
+# Parse arguments
+args = parser.parse_args()
+
+data_path = args.data
+
+vino = pd.read_csv(os.path.join(data_path, "vinoground.csv"))
 
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -22,8 +36,8 @@ from tqdm import tqdm
 for i in tqdm(range(500)):
     videos = []
     texts = []
-    videos.append(f"./vinoground_videos/{i}_pos.mp4")
-    videos.append(f"./vinoground_videos/{i}_neg.mp4")
+    videos.append(os.path.join(data_path, f"vinoground_videos/{i}_pos.mp4"))
+    videos.append(os.path.join(data_path, f"vinoground_videos/{i}_neg.mp4"))
     texts.append(vino["pos_cap"][i])
     texts.append(vino["neg_cap"][i])
     
