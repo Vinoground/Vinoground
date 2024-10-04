@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser()
 # Add arguments
 parser.add_argument('--data', type=str, default="./Vinoground", help='Path to Vinoground dataset (from Huggingface)')
 parser.add_argument('--ckpt', type=str, default="./checkpoints/qwen", help='Path to model checkpoints')
-parser.add_argument("--output", type=str, default="./outputs/qwen", help="Output directory of score files")
+parser.add_argument("--output", type=str, default="./outputs", help="Output directory of score files")
 parser.add_argument("--nframes", type=int, default=32, help="Number of frames to sample.")
 parser.add_argument("--fps", type=int, default=2, help="Frames per second to sample frames.")
 
@@ -46,11 +46,13 @@ model = Qwen2VLForConditionalGeneration.from_pretrained(
 processor = AutoProcessor.from_pretrained(model_name)
 
 if "fps" in sys.argv:
-    video_ans_file = open(os.path.join(output_dir, f"videoscore-fps{fps}-response.jsonl"), 'w')
-    text_ans_file = open(os.path.join(output_dir, f"textscore-fps{fps}-response.jsonl"), 'w')
+    os.mkdir(os.path.join(output_dir, f"{model_name}-fps{fps}"))
+    video_ans_file = open(os.path.join(output_dir, f"{model_name}-fps{fps}", f"videoscore-response.jsonl"), 'w')
+    text_ans_file = open(os.path.join(output_dir, f"{model_name}-fps{fps}", f"textscore-response.jsonl"), 'w')
 else:
-    video_ans_file = open(os.path.join(output_dir, f"videoscore-frame{nframes}-response.jsonl"), 'w')
-    text_ans_file = open(os.path.join(output_dir, f"textscore-frame{nframes}-response.jsonl"), 'w')
+    os.mkdir(os.path.join(output_dir, f"{model_name}-frame{nframes}"))
+    video_ans_file = open(os.path.join(output_dir, f"{model_name}-frame{nframes}", f"videoscore-response.jsonl"), 'w')
+    text_ans_file = open(os.path.join(output_dir, f"{model_name}-frame{nframes}", f"textscore-frame{nframes}-response.jsonl"), 'w')
 
 with open(os.path.join(data_path, "vinoground_textscore.json"), 'r') as f:
     questions = json.load(f)

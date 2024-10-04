@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser()
 # Add arguments
 parser.add_argument('--data', type=str, default="./Vinoground", help='Path to Vinoground dataset (from Huggingface)')
 parser.add_argument('--ckpt', type=str, default="./checkpoints/VideoLlama2", help='Path to model checkpoints')
-parser.add_argument("--output", type=str, default="./outputs/videollama2", help="Output directory of score files")
+parser.add_argument("--output", type=str, default="./outputs", help="Output directory of score files")
 
 # Parse arguments
 args = parser.parse_args()
@@ -30,8 +30,9 @@ model_path = ckpt_path
 model, processor, tokenizer = model_init(model_path)
 modal = "video"
 
-video_ans_file = open(os.path.join(output_dir, "videoscore-response.jsonl"), 'w')
-text_ans_file = open(os.path.join(output_dir, "textscore-response.jsonl"), 'w')
+os.mkdir(os.path.join(output_dir, "videollama2"))
+video_ans_file = open(os.path.join(output_dir, "videollama2", "videoscore-response.jsonl"), 'w')
+text_ans_file = open(os.path.join(output_dir, "videollama2", "textscore-response.jsonl"), 'w')
 
 with open(os.path.join(data_path, "vinoground_textscore.json"), 'r') as f:
     questions = json.load(f)

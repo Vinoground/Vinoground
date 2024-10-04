@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 # Add arguments
 parser.add_argument('--data', type=str, default="./Vinoground", help='Path to Vinoground dataset (from Huggingface)')
 parser.add_argument('--ckpt', type=str, default="./checkpoints/Phi-3-5-Vision", help='Path to model checkpoints')
-parser.add_argument("--output", type=str, default="./outputs/phi35vision", help="Output directory of score files")
+parser.add_argument("--output", type=str, default="./outputs", help="Output directory of score files")
 parser.add_argument("--nframes", type=int, default=32, help="Number of frames to sample.")
 
 # Parse arguments
@@ -70,9 +70,9 @@ params = {}
 params["use_image_id"] = False
 params["max_slice_nums"] = 2 # use 1 if cuda OOM and video resolution > 448*448
 
-
-video_ans_file = open(os.path.join(output_dir, f"videoscore-frame{nframes}-response.jsonl"), 'w')
-text_ans_file = open(os.path.join(output_dir, f"textscore-frame{nframes}-response.jsonl"), 'w')
+os.mkdir(os.path.join(output_dir, f"phi35vision-frame{nframes}"))
+video_ans_file = open(os.path.join(output_dir, f"phi35vision-frame{nframes}", f"videoscore-response.jsonl"), 'w')
+text_ans_file = open(os.path.join(output_dir, f"phi35vision-frame{nframes}", f"textscore-frame{nframes}-response.jsonl"), 'w')
 
 with open(os.path.join(data_path, "vinoground_textscore.json"), 'r') as f:
     questions = json.load(f)
