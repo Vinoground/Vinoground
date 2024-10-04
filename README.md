@@ -18,7 +18,7 @@ cd ..
 ```
 
 ## Reproducing Results
-Under the folder `eval` lies the code for all the open-source models we evaluated. All the codes have been tidied and can be used with one line of command:
+Under the folder `eval` lies the code for all the open-source models we evaluated. Of course, prior to reproducing results, you need to properly setup the environment for the models respectively. Once that is done, all the codes have been tidied and can be used with one line of command:
 ```sh
 python eval/xxx.py --data ./Vinoground --ckpt /path/to/ckpt --output ./outputs --nframes 32 --fps 4
 ```
@@ -28,7 +28,7 @@ python eval/xxx.py --data ./Vinoground --ckpt /path/to/ckpt --output ./outputs -
 - `--nframes` specifies the number of frames you want a model to sample, if supported. Cannot be specified at the same time as `fps`.
 - `--fps` specifies the frames per second you want a model to sample, if supported. Cannot be specified at the same time as `nframes`.
 
-Please feel free to test Vinoground on other models. We provide an evaluation template in `eval/template_clip.py` and `eval/template_generative.py`.
+Please feel free to evaluate Vinoground on other models. You can use our provided code as templates and modify them according to your model's formats.
 
 ## Analyzing Results
 We provide code to analyze the results. You can use the following code to produce an Excel sheet that not only contains the overall text, video and group score results but also the categorical results:
