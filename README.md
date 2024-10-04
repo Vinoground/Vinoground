@@ -4,7 +4,7 @@ We introduce Vinoground, a temporal counterfactual dataset composed of 1000 shor
 
 This repository hosts the evaluation code of the models we evaluated in our paper, and the instructions on how to reproduce our results.
 
-\[[Paper](https://arxiv.org/abs/2410.02763)\]\[[Project Page](https://vinoground.github.io/)\]\[[HuggingFace](https://huggingface.co/datasets/HanSolo9682/Vinoground)\]
+\[[Paper](https://arxiv.org/abs/2410.02763)\]\[[Project Page](https://vinoground.github.io/)\]\[[HuggingFace](https://huggingface.co/datasets/HanSolo9682/Vinoground)\]\[[Leaderboard](https://paperswithcode.com/sota/temporal-relation-extraction-on-vinoground)\]
 
 
 ## Datasets
