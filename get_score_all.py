@@ -43,7 +43,7 @@ for model in models:
     category_video_correct = {}
     category_group_correct = {}
     try:
-        text_pred_json_file = os.path.join(results, model, "textscore-response.json")
+        text_pred_json_file = os.path.join(results, model, "textscore-response.jsonl")
         with open(text_pred_json_file, 'r') as f:
             text_pred_data = [json.loads(line) for line in f]
         
@@ -52,7 +52,7 @@ for model in models:
             text_pred2content[text_pred_item['idx']] = text_pred_item['response']
 
         
-        video_pred_json_file = os.path.join(results, model, "videoscore-response.json")
+        video_pred_json_file = os.path.join(results, model, "videoscore-response.jsonl")
         with open(video_pred_json_file, 'r') as f:
             video_pred_data = [json.loads(line) for line in f]
         
