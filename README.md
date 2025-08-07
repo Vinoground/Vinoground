@@ -4,7 +4,7 @@ We introduce Vinoground, a temporal counterfactual dataset composed of 1000 shor
 
 This repository hosts the evaluation code of the models we evaluated in our paper, and the instructions on how to reproduce our results. This benchmark has also been integrated into \[[lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval)\]. One can begin using it by cloning their repository. Evaluation is now made easier. You can also use the evaluation codes we provided in this repository.
 
-\[[Paper](https://arxiv.org/abs/2410.02763)\]\[[Project Page](https://vinoground.github.io/)\]\[[HuggingFace](https://huggingface.co/datasets/HanSolo9682/Vinoground)\]\[[Leaderboard](https://paperswithcode.com/sota/temporal-relation-extraction-on-vinoground)\]
+\[[Paper](https://arxiv.org/abs/2410.02763)\]\[[Project Page](https://vinoground.github.io/)\]\[[HuggingFace](https://huggingface.co/datasets/HanSolo9682/Vinoground)\]\[[Leaderboard](https://vinoground.github.io/#leaderboard)\]
 
 
 ## Datasets
